@@ -88,6 +88,38 @@ const aboutActions = {
   },
 
   /**
+   * Generates a file with the users backup keys
+   */
+  generateKeyFile: function (backupAction) {
+    aboutActions.dispatchAction({
+      actionType: appConstants.APP_BACKUP_KEYS,
+      backupAction
+    })
+  },
+
+  /**
+   * Recover wallet by merging old wallet into new one
+   */
+  recoverWallet: function (firstRecoveryKey, secondRecoveryKey) {
+    aboutActions.dispatchAction({
+      actionType: appConstants.APP_RECOVER_WALLET,
+      firstRecoveryKey,
+      secondRecoveryKey
+    })
+  },
+
+  /**
+   * Loads a URL in a new frame in a safe way.
+   * It is important that it is not a simple anchor because it should not
+   * preserve the about preload script. See #672
+   */
+  viewKeyFile: function () {
+    aboutActions.dispatchAction({
+      actionType: windowConstants.WINDOW_VIEW_KEY
+    })
+  },
+
+  /**
    * Click through a certificate error.
    *
    * @param {string} url - The URL with the cert error

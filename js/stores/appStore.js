@@ -13,6 +13,7 @@ const siteUtil = require('../state/siteUtil')
 const siteSettings = require('../state/siteSettings')
 const appUrlUtil = require('../lib/appUrlUtil')
 const electron = require('electron')
+const fs = require('fs')
 const app = electron.app
 const ipcMain = electron.ipcMain
 const messages = require('../constants/messages')
@@ -27,7 +28,9 @@ const getSetting = require('../settings').getSetting
 const EventEmitter = require('events').EventEmitter
 const Immutable = require('immutable')
 const diff = require('immutablediff')
-const debounce = require('../lib/debounce')
+const Tabs = require('../../app/browser/tabs')
+const {fileUrl} = require('../../js/lib/appUrlUtil')
+const debounce = require('../lib/debounce.js')
 const locale = require('../../app/locale')
 const path = require('path')
 
@@ -582,6 +585,27 @@ const handleAppAction = (action) => {
       break
     case AppConstants.APP_SET_DICTIONARY:
       appState = appState.setIn(['dictionary', 'locale'], action.locale)
+      break
+    case AppConstants.APP_BACKUP_KEYS:
+      const paymentId = appState.get('ledgerInfo').get('paymentId')
+      const passphrase = appState.get('ledgerInfo').get('passphrase')
+      const message = 'Your ledger keys are ' + paymentId + ' and ' + passphrase
+      const filePath = app.getPath('userData') + '/backup_keys.html'
+
+      fs.writeFile(filePath, message)
+
+      Tabs.create({url: fileUrl(filePath)}).then((webContents) => {
+        if (action.backupAction === 'print') {
+          webContents.print({silent: false, printBackground: false})
+        } else {
+          webContents.downloadURL(fileUrl(filePath))
+        }
+      }).catch((err) => {
+        console.error(err)
+      })
+      break
+    case AppConstants.APP_RECOVER_WALLET:
+      ipcMain.emit(messages.LEDGER_RECOVER_WALLET, action.firstRecoveryKey, action.secondRecoveryKey)
       break
     case AppConstants.APP_CLEAR_DATA:
       if (action.clearDataDetail.get('browserHistory')) {
